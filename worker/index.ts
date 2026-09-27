@@ -93,10 +93,13 @@ app.all('*', async (c) => {
   return withAssetCacheHeaders(c.req.raw, response)
 })
 
-export default app
-
 // 云端备份任务使用分钟级 Cron 轮询，再由 D1 中的 next_run_at 决定真正执行时间。
 // 这样每个任务都能拥有独立间隔、开始时间与时区，而不需要重新部署 Worker。
-export const scheduled: ExportedHandlerScheduledHandler<Env> = async (_event, env) => {
-  await runDueCloudBackupTasks(env.DB)
+const worker: ExportedHandler<Env> = {
+  fetch: app.fetch.bind(app),
+  scheduled: async (_event, env) => {
+    await runDueCloudBackupTasks(env.DB)
+  },
 }
+
+export default worker
